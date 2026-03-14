@@ -1,0 +1,1 @@
+ALTER TABLE "categories_table" DROP COLUMN "type";
