@@ -200,7 +200,7 @@ export function AccountForm({ accountId }: AccountFormProps) {
                   <button
                     key={t.value}
                     type='button'
-                    onClick={() => form.setValue('type', t.value)}
+                    onClick={() => form.setValue('type', t.value as 'checking' | 'savings' | 'credit' | 'cash')}
                     className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-xs font-medium transition-all ${
                       isActive
                         ? t.activeBg
