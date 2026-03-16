@@ -1,9 +1,10 @@
 'use server';
 
 import { getMonthlyStats } from './get-monthly-stats';
+import type { DashboardFilters } from './dashboard-filters';
 
-export async function getBalanceTrend(months = 6) {
-  const monthlyData = await getMonthlyStats(months);
+export async function getBalanceTrend(filters: DashboardFilters) {
+  const monthlyData = await getMonthlyStats(filters);
   let cumulative = 0;
 
   return monthlyData.map((d) => {

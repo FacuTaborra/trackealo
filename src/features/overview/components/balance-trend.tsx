@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+
 import {
   Card,
   CardContent,
@@ -14,46 +16,45 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getBalanceTrend } from '@/features/overview/data/get-balance-trend';
 import { formatCurrency } from '@/lib/format';
+import type { DashboardFilters } from '@/features/overview/data/dashboard-filters';
+
+interface BalanceTrendProps {
+  filters: DashboardFilters;
+}
 
 const chartConfig = {
-  balance: {
-    label: 'Saldo',
-    color: 'hsl(var(--chart-1))'
-  }
+  balance: { label: 'Saldo', color: 'hsl(var(--chart-3))' }
 } satisfies ChartConfig;
 
-export default function BalanceTrendSlot() {
+export function BalanceTrend({ filters }: BalanceTrendProps) {
   const { data = [], isLoading } = useQuery({
-    queryKey: ['overview', 'balance-trend'],
-    queryFn: () => getBalanceTrend(6)
+    queryKey: [
+      'overview',
+      'balance-trend',
+      filters.currency,
+      filters.fromDate.toISOString(),
+      filters.toDate.toISOString(),
+      filters.categoryIds
+    ],
+    queryFn: () => getBalanceTrend(filters)
   });
 
-  if (isLoading) {
-    return (
-      <Card className='h-full'>
-        <CardHeader>
-          <CardTitle>Evolución del saldo</CardTitle>
-          <CardDescription>Saldo acumulado últimos 6 meses</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className='h-[200px] animate-pulse rounded bg-muted' />
-        </CardContent>
-      </Card>
-    );
-  }
+  const isEmpty = data.every((d) => d.balance === 0);
 
   return (
-    <Card className='h-full'>
+    <Card className='flex-1'>
       <CardHeader>
-        <CardTitle>Evolución del saldo</CardTitle>
-        <CardDescription>Saldo acumulado últimos 6 meses</CardDescription>
+        <CardTitle className='text-base'>Evolución del saldo</CardTitle>
+        <CardDescription>Saldo acumulado en el período</CardDescription>
       </CardHeader>
       <CardContent>
-        {data.every((d) => d.balance === 0) ? (
-          <p className='text-muted-foreground py-8 text-center text-sm'>
+        {isLoading ? (
+          <Skeleton className='h-[200px] w-full' />
+        ) : isEmpty ? (
+          <p className='py-8 text-center text-sm text-muted-foreground'>
             No hay datos para mostrar.
           </p>
         ) : (
@@ -65,17 +66,19 @@ export default function BalanceTrendSlot() {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                tick={{ fontSize: 12 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tickFormatter={(v) => formatCurrency(v)}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v) => formatCurrency(v, filters.currency)}
               />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    formatter={(v) => formatCurrency(Number(v))}
+                    formatter={(v) => formatCurrency(Number(v), filters.currency)}
                   />
                 }
               />
@@ -84,7 +87,7 @@ export default function BalanceTrendSlot() {
                 dataKey='balance'
                 stroke='var(--color-balance)'
                 fill='var(--color-balance)'
-                fillOpacity={0.3}
+                fillOpacity={0.25}
               />
             </AreaChart>
           </ChartContainer>

@@ -29,10 +29,6 @@ const DEFAULT_THEMES = [
   {
     name: 'Amber',
     value: 'amber'
-  },
-  {
-    name: 'Nexo',
-    value: 'nexo'
   }
 ];
 
@@ -44,10 +40,6 @@ const SCALED_THEMES = [
   {
     name: 'Blue',
     value: 'blue-scaled'
-  },
-  {
-    name: 'Nexo',
-    value: 'nexo-scaled'
   }
 ];
 

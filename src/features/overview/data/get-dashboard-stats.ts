@@ -1,26 +1,28 @@
 'use server';
 
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 
-import {
-  accountsTable,
-  transactionsTable
-} from '@/db/schema';
+import { accountsTable, transactionsTable } from '@/db/schema';
 import db from '@/db';
 import { getAuthContext } from '@/lib/context';
 
-export async function getDashboardStats() {
+import type { DashboardFilters } from './dashboard-filters';
+
+export async function getDashboardStats(filters: DashboardFilters) {
   const { session } = await getAuthContext();
   const userId = session.user.id;
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const { currency, fromDate, toDate } = filters;
 
   const accounts = await db
     .select({ balance: accountsTable.balance })
     .from(accountsTable)
-    .where(eq(accountsTable.user_id, userId));
+    .where(
+      and(
+        eq(accountsTable.user_id, userId),
+        eq(accountsTable.currency, currency)
+      )
+    );
 
   const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
 
@@ -29,12 +31,14 @@ export async function getDashboardStats() {
       total: sql<number>`COALESCE(SUM(${transactionsTable.amount}), 0)::real`
     })
     .from(transactionsTable)
+    .innerJoin(accountsTable, eq(transactionsTable.account_id, accountsTable.id))
     .where(
       and(
         eq(transactionsTable.user_id, userId),
+        eq(accountsTable.currency, currency),
         eq(transactionsTable.type, 'income'),
-        gte(transactionsTable.date, startOfMonth),
-        lte(transactionsTable.date, endOfMonth)
+        gte(transactionsTable.date, fromDate),
+        lte(transactionsTable.date, toDate)
       )
     );
 
@@ -43,12 +47,14 @@ export async function getDashboardStats() {
       total: sql<number>`COALESCE(SUM(${transactionsTable.amount}), 0)::real`
     })
     .from(transactionsTable)
+    .innerJoin(accountsTable, eq(transactionsTable.account_id, accountsTable.id))
     .where(
       and(
         eq(transactionsTable.user_id, userId),
+        eq(accountsTable.currency, currency),
         eq(transactionsTable.type, 'expense'),
-        gte(transactionsTable.date, startOfMonth),
-        lte(transactionsTable.date, endOfMonth)
+        gte(transactionsTable.date, fromDate),
+        lte(transactionsTable.date, toDate)
       )
     );
 
@@ -56,10 +62,14 @@ export async function getDashboardStats() {
   const expense = Number(expenseResult[0]?.total ?? 0);
   const netSavings = income - expense;
 
-  return {
-    totalBalance,
-    income,
-    expense,
-    netSavings
-  };
+  return { totalBalance, income, expense, netSavings };
+}
+
+export async function getUserCurrencies(): Promise<string[]> {
+  const { session } = await getAuthContext();
+  const rows = await db
+    .selectDistinct({ currency: accountsTable.currency })
+    .from(accountsTable)
+    .where(eq(accountsTable.user_id, session.user.id));
+  return rows.map((r) => r.currency);
 }

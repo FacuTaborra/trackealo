@@ -19,8 +19,13 @@ export default async function EditAccountPage({
 
   return (
     <PageContainer>
-      <div className='flex flex-1 flex-col gap-4'>
-        <h2 className='text-2xl font-bold tracking-tight'>Editar cuenta</h2>
+      <div className='flex flex-1 flex-col gap-6'>
+        <div>
+          <h2 className='text-2xl font-bold tracking-tight'>Editar cuenta</h2>
+          <p className='text-muted-foreground mt-1 text-sm'>
+            Modificá los datos de tu cuenta.
+          </p>
+        </div>
         <AccountForm accountId={id} />
       </div>
     </PageContainer>

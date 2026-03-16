@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - prod-server-ft
+
+jobs:
+  deploy:
+    name: Deploy to PROD
+    runs-on: [self-hosted, linux]
+    environment: PROD
+
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard/overview
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /dashboard/overview
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build --platform linux/amd64 -f Dockerfile \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" \
+            --build-arg CLERK_SECRET_KEY="$CLERK_SECRET_KEY" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL="$NEXT_PUBLIC_CLERK_SIGN_IN_URL" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL="$NEXT_PUBLIC_CLERK_SIGN_UP_URL" \
+            --build-arg NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="$NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL" \
+            --build-arg NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="$NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL" \
+            -t trackealo:prod-server-ft .
+
+      - name: Deploy container
+        run: |
+          CONTAINER="${{ vars.CONTAINER_NAME }}"
+
+          docker stop "$CONTAINER" 2>/dev/null || true
+          docker rm   "$CONTAINER" 2>/dev/null || true
+
+          docker run -d \
+            --name "$CONTAINER" \
+            --restart unless-stopped \
+            -p "${{ vars.CONTAINER_PORT }}":3000 \
+            -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" \
+            -e CLERK_SECRET_KEY="$CLERK_SECRET_KEY" \
+            -e NEXT_PUBLIC_CLERK_SIGN_IN_URL="$NEXT_PUBLIC_CLERK_SIGN_IN_URL" \
+            -e NEXT_PUBLIC_CLERK_SIGN_UP_URL="$NEXT_PUBLIC_CLERK_SIGN_UP_URL" \
+            -e NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="$NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL" \
+            -e NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="$NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL" \
+            -e DATABASE_URL="$DATABASE_URL" \
+            trackealo:prod-server-ft
+
+          docker image prune -f

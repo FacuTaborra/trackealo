@@ -10,6 +10,15 @@ import { Form } from '@/components/ui/form';
 import { FormInput } from '@/components/forms/form-input';
 import { FormSelect } from '@/components/forms/form-select';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { addAccountSchema, type AddAccountInput } from '../actions/add-account-schema';
 import { updateAccountSchema, type UpdateAccountInput } from '../actions/update-account-schema';
 import { addAccountAction } from '../actions/add-account';
@@ -122,42 +131,68 @@ export function AccountForm({ accountId }: AccountFormProps) {
     <Form
       form={form}
       onSubmit={form.handleSubmit(onSubmit)}
-      className='mx-auto max-w-md space-y-6'
+      className='w-full max-w-lg'
     >
-      <FormInput control={form.control} name='name' label='Nombre' required />
-      <FormSelect
-        control={form.control}
-        name='type'
-        label='Tipo de cuenta'
-        options={ACCOUNT_TYPE_OPTIONS}
-        required
-      />
-      <FormInput
-        control={form.control}
-        name='balance'
-        label='Saldo inicial'
-        type='number'
-        step='0.01'
-      />
-      <FormSelect
-        control={form.control}
-        name='currency'
-        label='Moneda'
-        options={CURRENCY_OPTIONS}
-        required
-      />
-      <div className='flex gap-2'>
-        <Button type='submit' disabled={isPending}>
-          {isEdit ? 'Guardar cambios' : 'Crear cuenta'}
-        </Button>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={() => router.push('/dashboard/accounts')}
-        >
-          Cancelar
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEdit ? 'Editar cuenta' : 'Datos de la cuenta'}</CardTitle>
+          <CardDescription>
+            {isEdit
+              ? 'Modificá los datos de tu cuenta.'
+              : 'Completá la información para registrar una nueva cuenta.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          <div className='space-y-4'>
+            <FormInput
+              control={form.control}
+              name='name'
+              label='Nombre'
+              placeholder='Ej: Santander, Mercado Pago...'
+              required
+            />
+            <FormSelect
+              control={form.control}
+              name='type'
+              label='Tipo de cuenta'
+              options={ACCOUNT_TYPE_OPTIONS}
+              required
+            />
+          </div>
+
+          <Separator />
+
+          <div className='space-y-4'>
+            <FormInput
+              control={form.control}
+              name='balance'
+              label='Saldo inicial'
+              type='number'
+              step='0.01'
+              placeholder='0'
+            />
+            <FormSelect
+              control={form.control}
+              name='currency'
+              label='Moneda'
+              options={CURRENCY_OPTIONS}
+              required
+            />
+          </div>
+        </CardContent>
+        <CardFooter className='flex gap-2 border-t pt-6'>
+          <Button type='submit' disabled={isPending}>
+            {isEdit ? 'Guardar cambios' : 'Crear cuenta'}
+          </Button>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => router.push('/dashboard/accounts')}
+          >
+            Cancelar
+          </Button>
+        </CardFooter>
+      </Card>
     </Form>
   );
 }

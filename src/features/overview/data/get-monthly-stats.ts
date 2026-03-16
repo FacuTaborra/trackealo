@@ -1,22 +1,39 @@
 'use server';
 
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 
-import { transactionsTable } from '@/db/schema';
+import { accountsTable, transactionsTable } from '@/db/schema';
 import db from '@/db';
 import { getAuthContext } from '@/lib/context';
 
-export async function getMonthlyStats(months = 6) {
+import type { DashboardFilters } from './dashboard-filters';
+
+export async function getMonthlyStats(filters: DashboardFilters) {
   const { session } = await getAuthContext();
   const userId = session.user.id;
 
-  const now = new Date();
+  const { currency, fromDate, toDate, categoryIds } = filters;
+
+  const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+  const end = new Date(toDate.getFullYear(), toDate.getMonth() + 1, 0, 23, 59, 59);
+
+  const monthsCount =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    end.getMonth() -
+    start.getMonth() +
+    1;
+
   const result: { month: string; income: number; expense: number }[] = [];
 
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+  for (let i = 0; i < monthsCount; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+    const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+
+    const categoryFilter =
+      categoryIds && categoryIds.length > 0
+        ? inArray(transactionsTable.category_id, categoryIds)
+        : undefined;
 
     const [incomeRow, expenseRow] = await Promise.all([
       db
@@ -24,12 +41,18 @@ export async function getMonthlyStats(months = 6) {
           total: sql<number>`COALESCE(SUM(${transactionsTable.amount}), 0)::real`
         })
         .from(transactionsTable)
+        .innerJoin(
+          accountsTable,
+          eq(transactionsTable.account_id, accountsTable.id)
+        )
         .where(
           and(
             eq(transactionsTable.user_id, userId),
+            eq(accountsTable.currency, currency),
             eq(transactionsTable.type, 'income'),
-            gte(transactionsTable.date, start),
-            lte(transactionsTable.date, end)
+            gte(transactionsTable.date, monthStart),
+            lte(transactionsTable.date, monthEnd),
+            categoryFilter
           )
         ),
       db
@@ -37,18 +60,27 @@ export async function getMonthlyStats(months = 6) {
           total: sql<number>`COALESCE(SUM(${transactionsTable.amount}), 0)::real`
         })
         .from(transactionsTable)
+        .innerJoin(
+          accountsTable,
+          eq(transactionsTable.account_id, accountsTable.id)
+        )
         .where(
           and(
             eq(transactionsTable.user_id, userId),
+            eq(accountsTable.currency, currency),
             eq(transactionsTable.type, 'expense'),
-            gte(transactionsTable.date, start),
-            lte(transactionsTable.date, end)
+            gte(transactionsTable.date, monthStart),
+            lte(transactionsTable.date, monthEnd),
+            categoryFilter
           )
         )
     ]);
 
     result.push({
-      month: start.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }),
+      month: monthStart.toLocaleDateString('es-AR', {
+        month: 'short',
+        year: '2-digit'
+      }),
       income: Number(incomeRow[0]?.total ?? 0),
       expense: Number(expenseRow[0]?.total ?? 0)
     });

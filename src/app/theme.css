@@ -73,34 +73,6 @@ body {
   }
 }
 
-.theme-nexo,
-.theme-nexo-scaled {
-  --font-sans: var(--font-instrument);
-  --primary: oklch(from #f77aae l c h);
-  --primary-foreground: oklch(0.985 0 0);
-  --sidebar: oklch(from #2c302e l c h);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(from #f77aae l c h);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(from #2c302e calc(l + 0.05) c h);
-  --sidebar-accent-foreground: oklch(0.85 0 0);
-  --sidebar-border: oklch(from #2c302e calc(l + 0.08) c h);
-  --sidebar-ring: oklch(from #f77aae l c h);
-
-  @variant dark {
-    --primary: oklch(from #f77aae l c h);
-    --primary-foreground: oklch(0.985 0 0);
-    --sidebar: oklch(from #2c302e l c h);
-    --sidebar-foreground: oklch(0.95 0 0);
-    --sidebar-primary: oklch(from #f77aae l c h);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(from #2c302e calc(l + 0.05) c h);
-    --sidebar-accent-foreground: oklch(0.85 0 0);
-    --sidebar-border: oklch(from #2c302e calc(l + 0.08) c h);
-    --sidebar-ring: oklch(from #f77aae l c h);
-  }
-}
-
 .theme-mono,
 .theme-mono-scaled {
   --font-sans: var(--font-mono);

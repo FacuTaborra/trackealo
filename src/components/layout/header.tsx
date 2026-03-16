@@ -3,6 +3,7 @@ import { SidebarTrigger } from '../ui/sidebar';
 import { Separator } from '../ui/separator';
 import { Breadcrumbs } from '../breadcrumbs';
 import { ThemeSelector } from '../theme-selector';
+import { ModeToggle } from './ThemeToggle/theme-toggle';
 
 export default function Header() {
   return (
@@ -14,6 +15,7 @@ export default function Header() {
       </div>
 
       <div className='flex items-center gap-2 px-4'>
+        <ModeToggle />
         <ThemeSelector />
       </div>
     </header>
