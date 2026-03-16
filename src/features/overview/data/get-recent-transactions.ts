@@ -17,6 +17,7 @@ const recentTransactionSchema = z.object({
   amount: z.number(),
   type: z.string(),
   date: z.coerce.date(),
+  to_account_id: z.number().nullable(),
   account: z.object({ name: z.string(), currency: z.string() }).nullable(),
   category: z.object({ name: z.string() }).nullable()
 });
@@ -31,6 +32,7 @@ export async function getRecentTransactions(limit = 5) {
       amount: transactionsTable.amount,
       type: transactionsTable.type,
       date: transactionsTable.date,
+      to_account_id: transactionsTable.to_account_id,
       account: {
         name: accountsTable.name,
         currency: accountsTable.currency

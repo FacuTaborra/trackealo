@@ -48,6 +48,7 @@ export async function findTransactionsByUserId(
       date: transactionsTable.date,
       notes: transactionsTable.notes,
       to_account_id: transactionsTable.to_account_id,
+      to_amount: transactionsTable.to_amount,
       created_at: transactionsTable.created_at,
       updated_at: transactionsTable.updated_at,
       account: {
@@ -87,6 +88,7 @@ export async function findTransactionByIdAndUserId(
       date: transactionsTable.date,
       notes: transactionsTable.notes,
       to_account_id: transactionsTable.to_account_id,
+      to_amount: transactionsTable.to_amount,
       created_at: transactionsTable.created_at,
       updated_at: transactionsTable.updated_at,
       account: {
@@ -129,7 +131,8 @@ export async function insertTransaction(
         description: data.description,
         date: data.date,
         notes: data.notes ?? null,
-        to_account_id: data.to_account_id ?? null
+        to_account_id: data.to_account_id ?? null,
+        to_amount: data.to_amount ?? null
       })
       .returning();
 
@@ -172,10 +175,11 @@ export async function insertTransaction(
             eq(accountsTable.user_id, userId)
           )
         );
+      const amountIn = data.to_amount ?? data.amount;
       await tx
         .update(accountsTable)
         .set({
-          balance: sql`${accountsTable.balance} + ${data.amount}`,
+          balance: sql`${accountsTable.balance} + ${amountIn}`,
           updated_at: new Date()
         })
         .where(

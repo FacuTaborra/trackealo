@@ -5,6 +5,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import {
+  Building2,
+  PiggyBank,
+  CreditCard,
+  Banknote
+} from 'lucide-react';
 
 import { Form } from '@/components/ui/form';
 import { FormInput } from '@/components/forms/form-input';
@@ -19,17 +25,43 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { addAccountSchema, type AddAccountInput } from '../actions/add-account-schema';
-import { updateAccountSchema, type UpdateAccountInput } from '../actions/update-account-schema';
+import {
+  addAccountSchema,
+  type AddAccountInput
+} from '../actions/add-account-schema';
+import {
+  updateAccountSchema,
+  type UpdateAccountInput
+} from '../actions/update-account-schema';
 import { addAccountAction } from '../actions/add-account';
 import { updateAccountAction } from '../actions/update-account';
 import { getAccountById } from '../data/get-account-by-id';
 
-const ACCOUNT_TYPE_OPTIONS = [
-  { value: 'checking', label: 'Cuenta corriente' },
-  { value: 'savings', label: 'Ahorro' },
-  { value: 'credit', label: 'Tarjeta de crédito' },
-  { value: 'cash', label: 'Efectivo' }
+const ACCOUNT_TYPES = [
+  {
+    value: 'checking',
+    label: 'Cta. corriente',
+    icon: Building2,
+    activeBg: 'bg-blue-500/10 border-blue-500 text-blue-500'
+  },
+  {
+    value: 'savings',
+    label: 'Ahorro',
+    icon: PiggyBank,
+    activeBg: 'bg-green-500/10 border-green-500 text-green-500'
+  },
+  {
+    value: 'credit',
+    label: 'Crédito',
+    icon: CreditCard,
+    activeBg: 'bg-orange-500/10 border-orange-500 text-orange-500'
+  },
+  {
+    value: 'cash',
+    label: 'Efectivo',
+    icon: Banknote,
+    activeBg: 'bg-emerald-500/10 border-emerald-500 text-emerald-500'
+  }
 ];
 
 const CURRENCY_OPTIONS = [
@@ -74,6 +106,8 @@ export function AccountForm({ accountId }: AccountFormProps) {
         }
       : undefined
   });
+
+  const selectedType = form.watch('type');
 
   const { mutate: addAccount, isPending: isAdding } = useMutation({
     mutationFn: async (input: AddAccountInput) => {
@@ -142,27 +176,49 @@ export function AccountForm({ accountId }: AccountFormProps) {
               : 'Completá la información para registrar una nueva cuenta.'}
           </CardDescription>
         </CardHeader>
+
         <CardContent className='space-y-6'>
-          <div className='space-y-4'>
-            <FormInput
-              control={form.control}
-              name='name'
-              label='Nombre'
-              placeholder='Ej: Santander, Mercado Pago...'
-              required
-            />
-            <FormSelect
-              control={form.control}
-              name='type'
-              label='Tipo de cuenta'
-              options={ACCOUNT_TYPE_OPTIONS}
-              required
-            />
+          {/* Nombre */}
+          <FormInput
+            control={form.control}
+            name='name'
+            label='Nombre'
+            placeholder='Ej: Santander, Mercado Pago...'
+            required
+          />
+
+          {/* Selector visual de tipo */}
+          <div className='space-y-2'>
+            <p className='text-sm font-medium'>
+              Tipo de cuenta <span className='text-destructive'>*</span>
+            </p>
+            <div className='grid grid-cols-2 gap-2 sm:grid-cols-4'>
+              {ACCOUNT_TYPES.map((t) => {
+                const Icon = t.icon;
+                const isActive = selectedType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type='button'
+                    onClick={() => form.setValue('type', t.value)}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-xs font-medium transition-all ${
+                      isActive
+                        ? t.activeBg
+                        : 'border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className='size-5' />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <Separator />
 
-          <div className='space-y-4'>
+          {/* Saldo y moneda */}
+          <div className='grid grid-cols-2 gap-4'>
             <FormInput
               control={form.control}
               name='balance'
@@ -180,6 +236,7 @@ export function AccountForm({ accountId }: AccountFormProps) {
             />
           </div>
         </CardContent>
+
         <CardFooter className='flex gap-2 border-t pt-6'>
           <Button type='submit' disabled={isPending}>
             {isEdit ? 'Guardar cambios' : 'Crear cuenta'}

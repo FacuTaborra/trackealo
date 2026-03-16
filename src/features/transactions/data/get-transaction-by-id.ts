@@ -34,6 +34,7 @@ export async function getTransactionById(
       date: transactionsTable.date,
       notes: transactionsTable.notes,
       to_account_id: transactionsTable.to_account_id,
+      to_amount: transactionsTable.to_amount,
       created_at: transactionsTable.created_at,
       updated_at: transactionsTable.updated_at,
       account: {

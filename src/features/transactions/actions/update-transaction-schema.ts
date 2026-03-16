@@ -9,7 +9,8 @@ export const updateTransactionSchema = z.object({
   description: z.string().min(2, 'La descripción debe tener al menos 2 caracteres'),
   date: z.coerce.date(),
   notes: z.string().optional().nullable(),
-  to_account_id: z.number().optional().nullable()
+  to_account_id: z.number().optional().nullable(),
+  to_amount: z.number().positive().optional().nullable()
 });
 
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;

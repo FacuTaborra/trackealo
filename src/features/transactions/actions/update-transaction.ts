@@ -67,9 +67,9 @@ export const updateTransactionAction = authActionClient
         await revertBalance(oldAccountId, oldAmount, false);
       } else if (oldType === 'expense') {
         await revertBalance(oldAccountId, oldAmount, true);
-      } else if (oldType === 'transfer' && oldToAccountId) {
-        await revertBalance(oldAccountId, oldAmount, true);
-        await revertBalance(oldToAccountId, oldAmount, false);
+      } else if (oldType === 'transfer') {
+        const isOutgoing = oldToAccountId != null;
+        await revertBalance(oldAccountId, oldAmount, isOutgoing);
       }
 
       await tx
@@ -83,6 +83,7 @@ export const updateTransactionAction = authActionClient
           date: parsedInput.date,
           notes: parsedInput.notes ?? null,
           to_account_id: parsedInput.to_account_id ?? null,
+          to_amount: parsedInput.to_amount ?? null,
           updated_at: new Date()
         })
         .where(
@@ -118,28 +119,19 @@ export const updateTransactionAction = authActionClient
               eq(accountsTable.user_id, userId)
             )
           );
-      } else if (parsedInput.type === 'transfer' && parsedInput.to_account_id) {
+      } else if (parsedInput.type === 'transfer') {
+        const isOutgoing = parsedInput.to_account_id != null;
         await tx
           .update(accountsTable)
           .set({
-            balance: sql`${accountsTable.balance} - ${parsedInput.amount}`,
+            balance: isOutgoing
+              ? sql`${accountsTable.balance} - ${parsedInput.amount}`
+              : sql`${accountsTable.balance} + ${parsedInput.amount}`,
             updated_at: new Date()
           })
           .where(
             and(
               eq(accountsTable.id, parsedInput.account_id),
-              eq(accountsTable.user_id, userId)
-            )
-          );
-        await tx
-          .update(accountsTable)
-          .set({
-            balance: sql`${accountsTable.balance} + ${parsedInput.amount}`,
-            updated_at: new Date()
-          })
-          .where(
-            and(
-              eq(accountsTable.id, parsedInput.to_account_id),
               eq(accountsTable.user_id, userId)
             )
           );

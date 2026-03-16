@@ -1,0 +1,1 @@
+ALTER TABLE "transactions_table" ADD COLUMN "to_amount" real;

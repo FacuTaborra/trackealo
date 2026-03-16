@@ -63,28 +63,19 @@ export const deleteTransactionAction = authActionClient
               eq(accountsTable.user_id, userId)
             )
           );
-      } else if (tx.type === 'transfer' && tx.to_account_id) {
+      } else if (tx.type === 'transfer') {
+        const isOutgoing = tx.to_account_id != null;
         await dbTx
           .update(accountsTable)
           .set({
-            balance: sql`${accountsTable.balance} + ${tx.amount}`,
+            balance: isOutgoing
+              ? sql`${accountsTable.balance} + ${tx.amount}`
+              : sql`${accountsTable.balance} - ${tx.amount}`,
             updated_at: new Date()
           })
           .where(
             and(
               eq(accountsTable.id, tx.account_id),
-              eq(accountsTable.user_id, userId)
-            )
-          );
-        await dbTx
-          .update(accountsTable)
-          .set({
-            balance: sql`${accountsTable.balance} - ${tx.amount}`,
-            updated_at: new Date()
-          })
-          .where(
-            and(
-              eq(accountsTable.id, tx.to_account_id),
               eq(accountsTable.user_id, userId)
             )
           );

@@ -23,6 +23,7 @@ export const transactionSchema = z.object({
   date: z.coerce.date(),
   notes: z.string().nullable(),
   to_account_id: z.number().nullable(),
+  to_amount: z.number().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
   account: transactionAccountSchema.nullable(),

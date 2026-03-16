@@ -42,7 +42,9 @@ export default function OverviewPage() {
         />
       ))}
 
-      <RecentTransactions />
+      <div className='border-t pt-6'>
+        <RecentTransactions />
+      </div>
     </div>
   );
 }

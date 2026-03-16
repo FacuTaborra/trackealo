@@ -56,6 +56,7 @@ export const transactionsTable = pgTable('transactions_table', {
   date: timestamp('date').notNull(),
   notes: text('notes'),
   to_account_id: integer('to_account_id').references(() => accountsTable.id),
+  to_amount: real('to_amount'),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow()
 });

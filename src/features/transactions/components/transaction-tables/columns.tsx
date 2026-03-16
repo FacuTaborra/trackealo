@@ -94,9 +94,12 @@ export function getColumns(): ColumnDef<Transaction>[] {
       cell: ({ row }) => {
         const amount = row.getValue('amount') as number;
         const type = row.original.type;
+        const toAccountId = row.original.to_account_id;
         const currency = row.original.account?.currency ?? 'ARS';
-        const displayAmount =
-          type === 'expense' || type === 'transfer' ? -amount : amount;
+        const isOutgoing =
+          type === 'expense' ||
+          (type === 'transfer' && toAccountId != null);
+        const displayAmount = isOutgoing ? -amount : amount;
         return (
           <span
             className={`tabular-nums ${

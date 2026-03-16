@@ -40,16 +40,19 @@ export function RecentTransactions() {
           </p>
         ) : (
           <ul className='divide-y'>
-            {data.map((tx) => (
+            {data.map((tx) => {
+              const isOutgoing =
+                tx.type === 'expense' ||
+                (tx.type === 'transfer' && tx.to_account_id != null);
+              const isPositive = !isOutgoing;
+              return (
               <li key={tx.id} className='flex items-center gap-3 py-3'>
                 <div
                   className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-                    tx.type === 'income'
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-red-100 text-red-600'
+                    isPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
                   }`}
                 >
-                  {tx.type === 'income' ? (
+                  {isPositive ? (
                     <ArrowUpRight className='size-4' />
                   ) : (
                     <ArrowDownLeft className='size-4' />
@@ -65,10 +68,10 @@ export function RecentTransactions() {
                 <div className='flex flex-col items-end gap-1'>
                   <span
                     className={`text-sm font-semibold ${
-                      tx.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      isPositive ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
-                    {tx.type === 'income' ? '+' : '-'}
+                    {isPositive ? '+' : '-'}
                     {formatCurrency(tx.amount, tx.account?.currency ?? 'ARS')}
                   </span>
                   <div className='flex items-center gap-1'>
@@ -85,7 +88,8 @@ export function RecentTransactions() {
                   </div>
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
         )}
       </CardContent>
