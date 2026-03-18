@@ -53,7 +53,7 @@ export default function OverviewPage() {
           </span>
           <div className='bg-border h-px flex-1' />
         </div>
-        <div className='flex flex-col gap-4 lg:flex-row lg:items-stretch'>
+        <div className='relative flex flex-col gap-4 lg:flex-row lg:pr-[336px] xl:pr-[400px]'>
           <div className='min-w-0 flex-1'>
             <CurrencyPanel
               currency={currency}
@@ -66,7 +66,7 @@ export default function OverviewPage() {
               hideHeader
             />
           </div>
-          <div className='w-full shrink-0 lg:max-h-[calc(100dvh-200px)] lg:w-80 lg:overflow-hidden xl:w-96'>
+          <div className='w-full lg:absolute lg:top-0 lg:right-0 lg:bottom-0 lg:w-80 lg:overflow-hidden xl:w-96'>
             <DashboardTransactionsPanel filters={filters} />
           </div>
         </div>
