@@ -12,10 +12,17 @@ export async function getMonthlyStats(filters: DashboardFilters) {
   const { session } = await getAuthContext();
   const userId = session.user.id;
 
-  const { currency, fromDate, toDate, categoryIds } = filters;
+  const { currency, fromDate, toDate, categoryIds, accountId } = filters;
 
   const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
-  const end = new Date(toDate.getFullYear(), toDate.getMonth() + 1, 0, 23, 59, 59);
+  const end = new Date(
+    toDate.getFullYear(),
+    toDate.getMonth() + 1,
+    0,
+    23,
+    59,
+    59
+  );
 
   const monthsCount =
     (end.getFullYear() - start.getFullYear()) * 12 +
@@ -30,10 +37,16 @@ export async function getMonthlyStats(filters: DashboardFilters) {
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
     const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
 
-    const categoryFilter =
-      categoryIds && categoryIds.length > 0
-        ? inArray(transactionsTable.category_id, categoryIds)
-        : undefined;
+    const baseConditions = [
+      eq(transactionsTable.user_id, userId),
+      eq(accountsTable.currency, currency),
+      gte(transactionsTable.date, monthStart),
+      lte(transactionsTable.date, monthEnd),
+      ...(categoryIds && categoryIds.length > 0
+        ? [inArray(transactionsTable.category_id, categoryIds)]
+        : []),
+      ...(accountId ? [eq(transactionsTable.account_id, accountId)] : [])
+    ];
 
     const [incomeRow, expenseRow] = await Promise.all([
       db
@@ -45,16 +58,7 @@ export async function getMonthlyStats(filters: DashboardFilters) {
           accountsTable,
           eq(transactionsTable.account_id, accountsTable.id)
         )
-        .where(
-          and(
-            eq(transactionsTable.user_id, userId),
-            eq(accountsTable.currency, currency),
-            eq(transactionsTable.type, 'income'),
-            gte(transactionsTable.date, monthStart),
-            lte(transactionsTable.date, monthEnd),
-            categoryFilter
-          )
-        ),
+        .where(and(...baseConditions, eq(transactionsTable.type, 'income'))),
       db
         .select({
           total: sql<number>`COALESCE(SUM(${transactionsTable.amount}), 0)::real`
@@ -64,16 +68,7 @@ export async function getMonthlyStats(filters: DashboardFilters) {
           accountsTable,
           eq(transactionsTable.account_id, accountsTable.id)
         )
-        .where(
-          and(
-            eq(transactionsTable.user_id, userId),
-            eq(accountsTable.currency, currency),
-            eq(transactionsTable.type, 'expense'),
-            gte(transactionsTable.date, monthStart),
-            lte(transactionsTable.date, monthEnd),
-            categoryFilter
-          )
-        )
+        .where(and(...baseConditions, eq(transactionsTable.type, 'expense')))
     ]);
 
     result.push({

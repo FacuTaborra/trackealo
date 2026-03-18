@@ -15,7 +15,8 @@ const CURRENCY_LABELS: Record<string, string> = {
 };
 
 export default function OverviewPage() {
-  const { fromDate, toDate, categoryIds } = useDashboardFilters();
+  const { fromDate, toDate, categoryIds, accountId, setCategoryIds } =
+    useDashboardFilters();
 
   const { data: currencies = ['ARS'] } = useQuery({
     queryKey: ['user-currencies'],
@@ -39,6 +40,8 @@ export default function OverviewPage() {
           fromDate={fromDate}
           toDate={toDate}
           categoryIds={categoryIds}
+          accountId={accountId}
+          onCategoryClick={(id) => setCategoryIds([id])}
         />
       ))}
 

@@ -3,4 +3,5 @@ export interface DashboardFilters {
   fromDate: Date;
   toDate: Date;
   categoryIds?: number[];
+  accountId?: number;
 }

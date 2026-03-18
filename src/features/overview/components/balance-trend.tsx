@@ -1,7 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  XAxis,
+  YAxis
+} from 'recharts';
 
 import {
   Card,
@@ -25,11 +32,19 @@ interface BalanceTrendProps {
   filters: DashboardFilters;
 }
 
+const MS_PER_DAY = 86_400_000;
+const COLOR_TREND = '#0080FF';
+
 const chartConfig = {
-  balance: { label: 'Saldo', color: 'hsl(var(--chart-3))' }
+  balance: { label: 'Saldo acumulado', color: COLOR_TREND }
 } satisfies ChartConfig;
 
 export function BalanceTrend({ filters }: BalanceTrendProps) {
+  const diffDays = Math.round(
+    (filters.toDate.getTime() - filters.fromDate.getTime()) / MS_PER_DAY
+  );
+  const isDaily = diffDays <= 31;
+
   const { data = [], isLoading } = useQuery({
     queryKey: [
       'overview',
@@ -44,52 +59,75 @@ export function BalanceTrend({ filters }: BalanceTrendProps) {
 
   const isEmpty = data.every((d) => d.balance === 0);
 
+  const formatAxisValue = (v: number) => {
+    const abs = Math.abs(v);
+    if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
+    return String(v);
+  };
+
   return (
     <Card className='flex-1'>
       <CardHeader>
         <CardTitle className='text-base'>Evolución del saldo</CardTitle>
-        <CardDescription>Saldo acumulado en el período</CardDescription>
+        <CardDescription>{isDaily ? 'Por día' : 'Por mes'}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className='pb-2'>
         {isLoading ? (
           <Skeleton className='h-[200px] w-full' />
         ) : isEmpty ? (
-          <p className='py-8 text-center text-sm text-muted-foreground'>
+          <p className='text-muted-foreground py-8 text-center text-sm'>
             No hay datos para mostrar.
           </p>
         ) : (
-          <ChartContainer config={chartConfig} className='h-[200px] w-full'>
-            <AreaChart data={data}>
-              <CartesianGrid strokeDasharray='3 3' />
+          <ChartContainer
+            config={chartConfig}
+            className='aspect-auto h-[200px] w-full'
+          >
+            <LineChart
+              data={data}
+              margin={{ top: 5, right: 5, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid strokeDasharray='3 3' vertical={false} />
               <XAxis
                 dataKey='month'
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: isDaily ? 11 : 12 }}
+                interval={isDaily ? 'preserveStartEnd' : undefined}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
+                tickMargin={4}
+                width={56}
                 tick={{ fontSize: 11 }}
-                tickFormatter={(v) => formatCurrency(v, filters.currency)}
+                tickFormatter={formatAxisValue}
+              />
+              <ReferenceLine
+                y={0}
+                stroke='hsl(var(--border))'
+                strokeDasharray='4 4'
               />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    formatter={(v) => formatCurrency(Number(v), filters.currency)}
+                    formatter={(v) =>
+                      formatCurrency(Number(v), filters.currency)
+                    }
                   />
                 }
               />
-              <Area
+              <Line
                 type='monotone'
                 dataKey='balance'
-                stroke='var(--color-balance)'
-                fill='var(--color-balance)'
-                fillOpacity={0.25}
+                stroke={COLOR_TREND}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
               />
-            </AreaChart>
+            </LineChart>
           </ChartContainer>
         )}
       </CardContent>

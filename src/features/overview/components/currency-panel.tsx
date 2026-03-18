@@ -11,7 +11,9 @@ interface CurrencyPanelProps {
   fromDate: Date;
   toDate: Date;
   categoryIds?: number[];
+  accountId?: number;
   label: string;
+  onCategoryClick?: (categoryId: number) => void;
 }
 
 export function CurrencyPanel({
@@ -19,18 +21,26 @@ export function CurrencyPanel({
   fromDate,
   toDate,
   categoryIds,
-  label
+  accountId,
+  label,
+  onCategoryClick
 }: CurrencyPanelProps) {
-  const filters: DashboardFilters = { currency, fromDate, toDate, categoryIds };
+  const filters: DashboardFilters = {
+    currency,
+    fromDate,
+    toDate,
+    categoryIds,
+    accountId
+  };
 
   return (
     <section className='space-y-4'>
       <div className='flex items-center gap-3'>
         <h2 className='text-lg font-semibold'>{label}</h2>
-        <span className='rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'>
+        <span className='bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
           {currency}
         </span>
-        <div className='h-px flex-1 bg-border' />
+        <div className='bg-border h-px flex-1' />
       </div>
 
       <StatsCards filters={filters} />
@@ -40,7 +50,7 @@ export function CurrencyPanel({
         <BalanceTrend filters={filters} />
       </div>
 
-      <CategoryBreakdown filters={filters} />
+      <CategoryBreakdown filters={filters} onCategoryClick={onCategoryClick} />
     </section>
   );
 }
