@@ -3,7 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar, CalendarIcon, ChevronDown, Tag, X } from 'lucide-react';
+import {
+  Calendar,
+  CalendarIcon,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
+  X
+} from 'lucide-react';
+import React, { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -36,7 +45,127 @@ const TIME_RANGE_OPTIONS: TimeRange[] = [
   'custom'
 ];
 
+const MONTHS_SHORT = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic'
+];
+
+function CustomRangePopoverContent({
+  pickerYear,
+  setPickerYear,
+  customFrom,
+  customTo,
+  setCustomRange
+}: {
+  pickerYear: number;
+  setPickerYear: React.Dispatch<React.SetStateAction<number>>;
+  customFrom: Date;
+  customTo: Date;
+  setCustomRange: (from: Date, to: Date) => void;
+}) {
+  const now = new Date();
+
+  const handleMonthSelect = (monthIndex: number) => {
+    const from = new Date(pickerYear, monthIndex, 1);
+    const endOfMonth = new Date(pickerYear, monthIndex + 1, 0, 23, 59, 59);
+    const endOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59
+    );
+    const to = endOfToday < endOfMonth ? endOfToday : endOfMonth;
+    setCustomRange(from, to);
+  };
+
+  const isMonthActive = (monthIndex: number) =>
+    customFrom.getFullYear() === pickerYear &&
+    customFrom.getMonth() === monthIndex &&
+    customFrom.getDate() === 1;
+
+  return (
+    <div className='flex flex-col gap-4'>
+      <div>
+        <div className='mb-2 flex items-center justify-between'>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-7 w-7'
+            onClick={() => setPickerYear((y) => y - 1)}
+          >
+            <ChevronLeft className='size-4' />
+          </Button>
+          <span className='text-sm font-medium'>{pickerYear}</span>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-7 w-7'
+            onClick={() => setPickerYear((y) => y + 1)}
+          >
+            <ChevronRight className='size-4' />
+          </Button>
+        </div>
+        <div className='grid grid-cols-4 gap-1'>
+          {MONTHS_SHORT.map((label, i) => (
+            <Button
+              key={label}
+              variant={isMonthActive(i) ? 'secondary' : 'ghost'}
+              size='sm'
+              className='h-8 text-xs font-normal'
+              onClick={() => handleMonthSelect(i)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className='border-t pt-4'>
+        <div className='text-muted-foreground mb-2 text-xs'>
+          Desde → Hasta (rango libre)
+        </div>
+        <div className='flex gap-4'>
+          <div>
+            <CalendarComponent
+              mode='single'
+              selected={customFrom}
+              onSelect={(d) => {
+                if (d) {
+                  const to = d > customTo ? d : customTo;
+                  setCustomRange(d, to);
+                }
+              }}
+            />
+          </div>
+          <div>
+            <CalendarComponent
+              mode='single'
+              selected={customTo}
+              onSelect={(d) => {
+                if (d && d >= customFrom) setCustomRange(customFrom, d);
+              }}
+              disabled={(date) => date < customFrom}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardFiltersBar() {
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
   const {
     timeRange,
     categoryIds,
@@ -98,57 +227,32 @@ export function DashboardFiltersBar() {
         </div>
 
         {timeRange === 'custom' && (
-          <div className='flex flex-wrap items-center gap-2'>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='h-8 min-w-0 justify-start gap-1 px-2 text-xs sm:px-3 sm:text-sm'
-                >
-                  <CalendarIcon className='size-3.5 opacity-50' />
-                  {format(customFrom, 'dd/MM/yy', { locale: es })}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto p-0' align='start'>
-                <CalendarComponent
-                  mode='single'
-                  selected={customFrom}
-                  onSelect={(d) => {
-                    if (d) {
-                      const to = d > customTo ? d : customTo;
-                      setCustomRange(d, to);
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <span className='text-muted-foreground'>→</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='h-8 min-w-0 justify-start gap-1 px-2 text-xs sm:px-3 sm:text-sm'
-                >
-                  <CalendarIcon className='size-3.5 opacity-50' />
-                  {format(customTo, 'dd/MM/yy', { locale: es })}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto p-0' align='start'>
-                <CalendarComponent
-                  mode='single'
-                  selected={customTo}
-                  onSelect={(d) => {
-                    if (d && d >= customFrom) setCustomRange(customFrom, d);
-                  }}
-                  disabled={(date) => date < customFrom}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <Popover
+            onOpenChange={(open) => {
+              if (open) setPickerYear(customFrom.getFullYear());
+            }}
+          >
+            <PopoverTrigger asChild>
+              <Button
+                variant='outline'
+                size='sm'
+                className='h-8 min-w-0 justify-start gap-1 px-2 text-xs sm:px-3 sm:text-sm'
+              >
+                <CalendarIcon className='size-3.5 opacity-50' />
+                {format(customFrom, 'dd/MM/yy', { locale: es })} →{' '}
+                {format(customTo, 'dd/MM/yy', { locale: es })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-auto p-3' align='start'>
+              <CustomRangePopoverContent
+                pickerYear={pickerYear}
+                setPickerYear={setPickerYear}
+                customFrom={customFrom}
+                customTo={customTo}
+                setCustomRange={setCustomRange}
+              />
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 

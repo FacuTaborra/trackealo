@@ -4,6 +4,7 @@ import {
   parseAsArrayOf,
   parseAsInteger,
   parseAsIsoDate,
+  parseAsString,
   parseAsStringEnum,
   useQueryStates
 } from 'nuqs';
@@ -37,7 +38,24 @@ function getDateRange(timeRange: Exclude<TimeRange, 'custom'>): {
   toDate: Date;
 } {
   const now = new Date();
-  const toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const endOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59
+  );
+  const endOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59
+  );
+  const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+  const toDate = endOfToday < endOfMonth ? endOfToday : endOfMonth;
 
   switch (timeRange) {
     case 'this_month':
@@ -58,20 +76,21 @@ function getDateRange(timeRange: Exclude<TimeRange, 'custom'>): {
     case 'this_year':
       return {
         fromDate: new Date(now.getFullYear(), 0, 1),
-        toDate: new Date(now.getFullYear(), 11, 31, 23, 59, 59)
+        toDate: endOfToday < endOfYear ? endOfToday : endOfYear
       };
   }
 }
 
 export function useDashboardFilters() {
   const [
-    { timeRange, categoryIds, accountId, customFrom, customTo },
+    { timeRange, categoryIds, accountId, currency, customFrom, customTo },
     setFilters
   ] = useQueryStates({
     timeRange:
       parseAsStringEnum<TimeRange>(TIME_RANGE_VALUES).withDefault('this_month'),
     categoryIds: parseAsArrayOf(parseAsInteger).withDefault([]),
     accountId: parseAsInteger.withDefault(0),
+    currency: parseAsString.withDefault('ARS'),
     customFrom: parseAsIsoDate,
     customTo: parseAsIsoDate
   });
@@ -100,6 +119,7 @@ export function useDashboardFilters() {
     timeRange,
     categoryIds,
     accountId: accountId === 0 ? undefined : accountId,
+    currency,
     fromDate,
     toDate,
     customFrom:
@@ -120,6 +140,7 @@ export function useDashboardFilters() {
       setFilters({ categoryIds: value.length > 0 ? value : null }),
     setAccountId: (value: number | undefined) =>
       setFilters({ accountId: value ?? 0 }),
+    setCurrency: (value: string) => setFilters({ currency: value }),
     setCustomRange: (from: Date, to: Date) =>
       setFilters({
         timeRange: 'custom',

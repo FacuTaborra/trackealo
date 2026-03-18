@@ -35,10 +35,12 @@ export type Transaction = z.infer<typeof transactionSchema>;
 export const getTransactionsSchema = z.object({
   accountId: z.number().optional(),
   categoryId: z.number().optional(),
+  categoryIds: z.array(z.number()).optional(),
   type: z.enum(['income', 'expense', 'transfer']).optional(),
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
   search: z.string().optional(),
+  currency: z.string().optional(),
   ids: z.array(z.number()).optional()
 });
 

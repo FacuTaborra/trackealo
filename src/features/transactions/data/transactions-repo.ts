@@ -1,10 +1,6 @@
-import { and, eq, gte, like, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, like, lte, sql } from 'drizzle-orm';
 
-import {
-  accountsTable,
-  categoriesTable,
-  transactionsTable
-} from '@/db/schema';
+import { accountsTable, categoriesTable, transactionsTable } from '@/db/schema';
 import db from '@/db';
 import type { AddTransactionInput } from '../actions/add-transaction-schema';
 import type { GetTransactionsInput } from './get-transactions-schema';
@@ -21,6 +17,12 @@ export async function findTransactionsByUserId(
   if (params.categoryId) {
     conditions.push(eq(transactionsTable.category_id, params.categoryId));
   }
+  if (params.categoryIds && params.categoryIds.length > 0) {
+    conditions.push(inArray(transactionsTable.category_id, params.categoryIds));
+  }
+  if (params.currency) {
+    conditions.push(eq(accountsTable.currency, params.currency));
+  }
   if (params.type) {
     conditions.push(eq(transactionsTable.type, params.type));
   }
@@ -31,9 +33,7 @@ export async function findTransactionsByUserId(
     conditions.push(lte(transactionsTable.date, params.toDate));
   }
   if (params.search) {
-    conditions.push(
-      like(transactionsTable.description, `%${params.search}%`)
-    );
+    conditions.push(like(transactionsTable.description, `%${params.search}%`));
   }
 
   return db
@@ -72,10 +72,7 @@ export async function findTransactionsByUserId(
     .orderBy(sql`${transactionsTable.date} DESC`);
 }
 
-export async function findTransactionByIdAndUserId(
-  id: number,
-  userId: string
-) {
+export async function findTransactionByIdAndUserId(id: number, userId: string) {
   const rows = await db
     .select({
       id: transactionsTable.id,

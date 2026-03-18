@@ -14,6 +14,8 @@ interface CurrencyPanelProps {
   accountId?: number;
   label: string;
   onCategoryClick?: (categoryId: number) => void;
+  /** Cuando true, no renderiza el header (título + línea). Para usar con header full-width en el layout. */
+  hideHeader?: boolean;
 }
 
 export function CurrencyPanel({
@@ -23,7 +25,8 @@ export function CurrencyPanel({
   categoryIds,
   accountId,
   label,
-  onCategoryClick
+  onCategoryClick,
+  hideHeader = false
 }: CurrencyPanelProps) {
   const filters: DashboardFilters = {
     currency,
@@ -35,13 +38,15 @@ export function CurrencyPanel({
 
   return (
     <section className='space-y-4'>
-      <div className='flex items-center gap-3'>
-        <h2 className='text-lg font-semibold'>{label}</h2>
-        <span className='bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
-          {currency}
-        </span>
-        <div className='bg-border h-px flex-1' />
-      </div>
+      {!hideHeader && (
+        <div className='flex items-center gap-3'>
+          <h2 className='text-lg font-semibold'>{label}</h2>
+          <span className='bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
+            {currency}
+          </span>
+          <div className='bg-border h-px flex-1' />
+        </div>
+      )}
 
       <StatsCards filters={filters} />
 
