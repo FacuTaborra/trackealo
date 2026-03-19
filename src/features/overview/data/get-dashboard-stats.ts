@@ -14,18 +14,28 @@ export async function getDashboardStats(filters: DashboardFilters) {
 
   const { currency, fromDate, toDate, accountId } = filters;
 
-  const accountConditions = [
-    eq(accountsTable.user_id, userId),
-    eq(accountsTable.currency, currency),
-    ...(accountId ? [eq(accountsTable.id, accountId)] : [])
-  ];
+  const totalBalanceResult = await db
+    .select({
+      net: sql<number>`COALESCE(SUM(CASE
+        WHEN ${transactionsTable.type} = 'income' THEN ${transactionsTable.amount}
+        WHEN ${transactionsTable.type} = 'expense' THEN -${transactionsTable.amount}
+        ELSE 0
+      END), 0)::real`
+    })
+    .from(transactionsTable)
+    .innerJoin(
+      accountsTable,
+      eq(transactionsTable.account_id, accountsTable.id)
+    )
+    .where(
+      and(
+        eq(transactionsTable.user_id, userId),
+        eq(accountsTable.currency, currency),
+        ...(accountId ? [eq(transactionsTable.account_id, accountId)] : [])
+      )
+    );
 
-  const accounts = await db
-    .select({ balance: accountsTable.balance })
-    .from(accountsTable)
-    .where(and(...accountConditions));
-
-  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+  const totalBalance = Number(totalBalanceResult[0]?.net ?? 0);
 
   const txConditions = (type: 'income' | 'expense') => [
     eq(transactionsTable.user_id, userId),

@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 
 import { accountsTable, transactionsTable } from '@/db/schema';
 import db from '@/db';
@@ -11,25 +11,72 @@ import type { DashboardFilters } from './dashboard-filters';
 
 const MS_PER_DAY = 86_400_000;
 
+async function getNetBalanceBefore(
+  userId: string,
+  currency: string,
+  beforeDate: Date,
+  accountId?: number
+): Promise<number> {
+  const result = await db
+    .select({
+      net: sql<number>`COALESCE(SUM(CASE
+        WHEN ${transactionsTable.type} = 'income' THEN ${transactionsTable.amount}
+        WHEN ${transactionsTable.type} = 'expense' THEN -${transactionsTable.amount}
+        ELSE 0
+      END), 0)::real`
+    })
+    .from(transactionsTable)
+    .innerJoin(
+      accountsTable,
+      eq(transactionsTable.account_id, accountsTable.id)
+    )
+    .where(
+      and(
+        eq(transactionsTable.user_id, userId),
+        eq(accountsTable.currency, currency),
+        lt(transactionsTable.date, beforeDate),
+        ...(accountId ? [eq(transactionsTable.account_id, accountId)] : [])
+      )
+    );
+  return Number(result[0]?.net ?? 0);
+}
+
 export async function getBalanceTrend(filters: DashboardFilters) {
-  const { fromDate, toDate } = filters;
+  const { session } = await getAuthContext();
+  const userId = session.user.id;
+  const { currency, fromDate, toDate, accountId } = filters;
   const diffDays = Math.round(
     (toDate.getTime() - fromDate.getTime()) / MS_PER_DAY
   );
 
+  const startOfFromDate = new Date(
+    fromDate.getFullYear(),
+    fromDate.getMonth(),
+    fromDate.getDate()
+  );
+  const initialBalance = await getNetBalanceBefore(
+    userId,
+    currency,
+    startOfFromDate,
+    accountId
+  );
+
   if (diffDays > 31) {
     const monthlyData = await getMonthlyStats(filters);
-    let cumulative = 0;
+    let cumulative = initialBalance;
     return monthlyData.map((d) => {
       cumulative += d.income - d.expense;
       return { month: d.month, balance: cumulative };
     });
   }
 
-  return getDailyTrend(filters);
+  return getDailyTrend(filters, initialBalance);
 }
 
-async function getDailyTrend(filters: DashboardFilters) {
+async function getDailyTrend(
+  filters: DashboardFilters,
+  initialBalance: number
+) {
   const { session } = await getAuthContext();
   const userId = session.user.id;
   const { currency, fromDate, toDate, categoryIds, accountId } = filters;
@@ -106,7 +153,7 @@ async function getDailyTrend(filters: DashboardFilters) {
     }
   }
 
-  let cumulative = 0;
+  let cumulative = initialBalance;
   return Object.entries(dailyNet).map(([month, net]) => {
     cumulative += net;
     return { month, net, balance: cumulative };

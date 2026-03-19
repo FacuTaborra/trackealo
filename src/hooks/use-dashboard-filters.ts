@@ -146,6 +146,16 @@ export function useDashboardFilters() {
         timeRange: 'custom',
         customFrom: from,
         customTo: to
-      })
+      }),
+    resetFilters: () =>
+      setFilters({
+        timeRange: 'this_month',
+        categoryIds: null,
+        accountId: null,
+        customFrom: null,
+        customTo: null
+      }),
+    isFiltersDirty:
+      timeRange !== 'this_month' || categoryIds.length > 0 || accountId !== 0
   };
 }

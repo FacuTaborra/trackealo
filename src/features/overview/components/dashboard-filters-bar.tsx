@@ -175,7 +175,9 @@ export function DashboardFiltersBar() {
     setTimeRange,
     setCategoryIds,
     setAccountId,
-    setCustomRange
+    setCustomRange,
+    resetFilters,
+    isFiltersDirty
   } = useDashboardFilters();
 
   const { data: accounts = [] } = useQuery({
@@ -329,6 +331,18 @@ export function DashboardFiltersBar() {
             )}
           </PopoverContent>
         </Popover>
+      )}
+
+      {isFiltersDirty && (
+        <Button
+          variant='ghost'
+          size='sm'
+          className='text-muted-foreground h-8 gap-1.5 text-xs'
+          onClick={resetFilters}
+        >
+          <X className='size-3.5' />
+          Limpiar filtros
+        </Button>
       )}
     </div>
   );
